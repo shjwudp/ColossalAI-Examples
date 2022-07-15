@@ -20,6 +20,8 @@ from titans.loss.lm_loss import GPTLMLoss
 
 from dataset.webtext import WebtextDataset
 
+from dataset.megatron_dataset import build_train_valid_test_datasets, build_pretraining_data_loader
+
 
 def calc_local_model_size(model: torch.nn.Module):
     numel_per_device = 0
@@ -110,6 +112,17 @@ def main():
     optimizer = gpc.config.optimizer.pop('type')(model.parameters(), **gpc.config.optimizer)
 
     lr_scheduler = LinearWarmupLR(optimizer, total_steps=gpc.config.NUM_EPOCHS, warmup_steps=5)
+
+    train_ds, valid_ds, test_ds = build_train_valid_test_datasets(
+        data_prefix="1.0 /cephfs/dzy/new_nfs_data/pile_train/pile_train_00_text_document 1.0 /cephfs/dzy/new_nfs_data/pile_train/pile_train_01_text_document 1.0 /cephfs/dzy/new_nfs_data/pile_train/pile_train_02_text_document 1.0 /cephfs/dzy/new_nfs_data/pile_train/pile_train_03_text_document 1.0 /cephfs/dzy/new_nfs_data/pile_train/pile_train_04_text_document 1.0 /cephfs/dzy/new_nfs_data/pile_train/pile_train_05_text_document 1.0 /cephfs/dzy/new_nfs_data/pile_train/pile_train_06_text_document 1.0 /cephfs/dzy/new_nfs_data/pile_train/pile_train_07_text_document 1.0 /cephfs/dzy/new_nfs_data/pile_train/pile_train_08_text_document 1.0 /cephfs/dzy/new_nfs_data/pile_train/pile_train_09_text_document 1.0 /cephfs/dzy/new_nfs_data/pile_train/pile_train_10_text_document 1.0 /cephfs/dzy/new_nfs_data/pile_train/pile_train_11_text_document 1.0 /cephfs/dzy/new_nfs_data/pile_train/pile_train_12_text_document 1.0 /cephfs/dzy/new_nfs_data/pile_train/pile_train_13_text_document 1.0 /cephfs/dzy/new_nfs_data/pile_train/pile_train_14_text_document 1.0 /cephfs/dzy/new_nfs_data/pile_train/pile_train_15_text_document 1.0 /cephfs/dzy/new_nfs_data/pile_train/pile_train_16_text_document 1.0 /cephfs/dzy/new_nfs_data/pile_train/pile_train_17_text_document 1.0 /cephfs/dzy/new_nfs_data/pile_train/pile_train_18_text_document 1.0 /cephfs/dzy/new_nfs_data/pile_train/pile_train_19_text_document 1.0 /cephfs/dzy/new_nfs_data/pile_train/pile_train_20_text_document 1.0 /cephfs/dzy/new_nfs_data/pile_train/pile_train_21_text_document 1.0 /cephfs/dzy/new_nfs_data/pile_train/pile_train_22_text_document 1.0 /cephfs/dzy/new_nfs_data/pile_train/pile_train_23_text_document 1.0 /cephfs/dzy/new_nfs_data/pile_train/pile_train_24_text_document 1.0 /cephfs/dzy/new_nfs_data/pile_train/pile_train_25_text_document 1.0 /cephfs/dzy/new_nfs_data/pile_train/pile_train_26_text_document 1.0 /cephfs/dzy/new_nfs_data/pile_train/pile_train_27_text_document 1.0 /cephfs/dzy/new_nfs_data/pile_train/pile_train_28_text_document 1.0 /cephfs/dzy/new_nfs_data/pile_train/pile_train_29_text_document",
+        data_impl="mmap",
+        splits_string="98,2,0",
+        train_valid_test_num_samples=300000000000 // gpc.config.SEQ_LEN,
+        seq_length=gpc.config.SEQ_LEN,
+        seed=1234,
+        skip_warmup=True,
+    )
+    train_dataloader = build_pretraining_data_loader(train_ds)
 
     engine, train_dataloader, _, lr_scheduler = colossalai.initialize(model,
                                                                       optimizer,

@@ -19,6 +19,7 @@ from colossalai.pipeline.pipelinable import PipelinableContext
 from titans.loss.lm_loss import GPTLMLoss
 
 from dataset.webtext import WebtextDataset
+from dataset.sqlite_dataset import GPTSqliteDataset
 
 
 def calc_local_model_size(model: torch.nn.Module):
@@ -48,6 +49,9 @@ def main():
                                             pin_memory=True,
                                             shuffle=True,
                                             drop_last=True)
+
+    train_ds = GPTSqliteDataset(os.environ['DATA'], seq_len=gpc.config.SEQ_LEN)
+    train_dataloader = utils.get_dataloader(train_ds, batch_size=gpc.config.BATCH_SIZE, pin_memory=True, shuffle=False, drop_last=True)
 
     logger.info('Build model', ranks=[0])
     use_pipeline = is_using_pp()
